@@ -3,7 +3,7 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { fetchNotes } from '@/lib/api';
 import css from './NotesPage.module.css';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { Toaster, toast } from 'react-hot-toast';
 import Pagination from '../../components/Pagination/Pagination';
@@ -17,6 +17,7 @@ const NotesClient = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [inputValue, setInputValue] = useState('');
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['notes', searchQuery, page],
@@ -33,11 +34,23 @@ const NotesClient = () => {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
+  useEffect(() => {
+    if (isError) {
+      toast.error('There was an error, please try again...');
+    }
+  }, [isError]);
+
   return (
     <div className={css.app}>
       <Toaster position="top-right" />
       <header className={css.toolbar}>
-        <SearchBox onUpdate={updateSearchQuery} />
+        <SearchBox
+          value={inputValue}
+          onChange={value => {
+            setInputValue(value);
+            updateSearchQuery(value);
+          }}
+        />
         {data && data.totalPages > 1 && (
           <Pagination totalPages={data.totalPages} setPage={setPage} page={page} />
         )}
@@ -51,8 +64,6 @@ const NotesClient = () => {
         )}
       </header>
       {isLoading && <Loading />}
-
-      {isError && toast.error('There was an error, please try again...')}
 
       {data && data.notes.length > 0 && <NoteList notes={data.notes} />}
     </div>
